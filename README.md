@@ -143,6 +143,6 @@ android/                  Android 工程
 
 ## 许可
 
-MIT。见 [LICENSE](LICENSE)。
+MIT。见 [LICENSE](LICENSE)，上游归属见 [NOTICE](NOTICE)。
 
 `src/` 下的网页资源版权归 DeepSeek，同样以 MIT 协议发布。完整依赖许可见应用内「关于」页。

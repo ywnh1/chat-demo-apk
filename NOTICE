@@ -1,0 +1,28 @@
+ChatDemo
+========
+
+Copyright (c) 2026 ywnh1
+
+This project is released under the MIT License; see LICENSE.
+
+Bundled upstream work
+---------------------
+
+The web application under src/static/ is the official DeepSeek "API 使用 demo"
+(version 0.1.2) and remains:
+
+    Copyright (c) 2026 DeepSeek
+    Released under the MIT License.
+
+Its files are redistributed unmodified except for a single i18n string in
+src/static/js/main.*.js (the application name shown in the sidebar) and the
+page title in src/index.html. The upstream LICENSE text is preserved verbatim
+at src/LICENSE.
+
+Third-party components
+----------------------
+
+The native shell uses Ionic Capacitor and its plugins; the web bundle ships
+React, zustand, KaTeX, Prism, Mermaid (with cytoscape, dagre, d3 and dayjs)
+and DOMPurify. Each retains its own licence. The authoritative list, with
+links, is rendered inside the app at Settings → About.
