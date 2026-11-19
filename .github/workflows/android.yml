@@ -111,9 +111,32 @@ jobs:
           unzip -l "$APK" | grep -q 'assets/public/about-panel.js' || { echo '::error::补丁文件未打包'; exit 1; }
           echo "✓ 两个补丁脚本均已打包"
 
-          # Custom launcher icon must be the one we shipped, not the Capacitor default.
-          unzip -l "$APK" | grep -q 'res/.*ic_launcher' || { echo '::error::缺少图标资源'; exit 1; }
-          echo "✓ 自定义图标已打包"
+          # Custom launcher icon. aapt2 renames res files to short names
+          # (res/o-.png), so filenames prove nothing: resolve the real path from
+          # the resource table and compare pixels against the art in the repo.
+          ICON=$("$BT/aapt2" dump resources "$APK" \
+            | grep -A6 'mipmap/ic_launcher$' \
+            | grep '(xxxhdpi)' \
+            | sed 's/.*(file) //; s/ type=.*//')
+          [ -n "$ICON" ] || { echo '::error::资源表中找不到 mipmap/ic_launcher'; exit 1; }
+          echo "图标资源: $ICON"
+
+          unzip -p "$APK" "$ICON" > /tmp/apk-icon.png
+          command -v compare >/dev/null || { echo '::error::CI 缺少 ImageMagick'; exit 1; }
+          identify /tmp/apk-icon.png
+
+          # aapt2's crunch is lossless, so identical art matches near-exactly;
+          # a wrong (e.g. default) icon scores ~0.45. Threshold 0.05 leaves room
+          # for a possible palette quantisation while keeping that gap.
+          # Plain `compare`/`identify` work on ImageMagick 6 and 7; the runner
+          # ships v6, which has no `magick` wrapper.
+          DIFF=$(compare -metric RMSE /tmp/apk-icon.png \
+            android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png null: 2>&1 || true)
+          NORM=$(echo "$DIFF" | sed 's/.*(\(.*\))/\1/')
+          echo "与仓库图标的 RMSE: $DIFF"
+          awk -v d="$NORM" 'BEGIN { exit (d < 0.05 ? 0 : 1) }' \
+            || { echo "::error::APK 内的图标不是仓库里的图标 (RMSE=$NORM)"; exit 1; }
+          echo "✓ 图标与仓库源文件一致"
 
           "$BT/apksigner" verify --print-certs "$APK" | head -4
           echo "✓ 签名有效"
