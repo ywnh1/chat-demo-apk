@@ -27,15 +27,20 @@ jobs:
           java-version: 21
           cache: gradle
 
-      - uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages
+      # ubuntu-latest already ships a complete Android SDK (platforms and
+      # build-tools included). android-actions/setup-android re-downloads
+      # cmdline-tools and its licence step exits 1, so it is deliberately not used.
+      - name: Report Android SDK
         run: |
-          yes | sdkmanager --licenses > /dev/null
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms" "$ANDROID_HOME/build-tools" 2>/dev/null || true
+          command -v sdkmanager || true
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Run tests
+        run: npm test
 
       - name: Sync web assets into the Android project
         run: npx cap sync android
