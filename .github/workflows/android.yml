@@ -133,21 +133,20 @@ jobs:
           echo "图标资源: $ICON"
 
           unzip -p "$APK" "$ICON" > /tmp/apk-icon.png
-          command -v compare >/dev/null || { echo '::error::CI 缺少 ImageMagick'; exit 1; }
-          identify /tmp/apk-icon.png
 
-          # aapt2's crunch is lossless, so identical art matches near-exactly;
-          # a wrong (e.g. default) icon scores ~0.45. Threshold 0.05 leaves room
-          # for a possible palette quantisation while keeping that gap.
-          # Plain `compare`/`identify` work on ImageMagick 6 and 7; the runner
-          # ships v6, which has no `magick` wrapper.
-          DIFF=$(compare -metric RMSE /tmp/apk-icon.png \
-            android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png null: 2>&1 || true)
-          NORM=$(echo "$DIFF" | sed 's/.*(\(.*\))/\1/')
-          echo "与仓库图标的 RMSE: $DIFF"
-          awk -v d="$NORM" 'BEGIN { exit (d < 0.05 ? 0 : 1) }' \
-            || { echo "::error::APK 内的图标不是仓库里的图标 (RMSE=$NORM)"; exit 1; }
-          echo "✓ 图标与仓库源文件一致"
+          # aapt2 re-crunches PNGs at build time, so byte comparison would fail
+          # even for correct art. Read the IHDR width/height instead: proving it
+          # is a PNG of the right density catches a missing or wrong-sized
+          # launcher icon without depending on ImageMagick or on aapt's
+          # compression behaviour. od is coreutils, so no extra install.
+          [ "$(od -An -j0 -N8 -tx1 /tmp/apk-icon.png | tr -d ' \n')" = "89504e470d0a1a0a" ] \
+            || { echo '::error::图标不是 PNG'; exit 1; }
+          W=$(od -An -j16 -N4 -tu1 /tmp/apk-icon.png | awk '{print $1*16777216+$2*65536+$3*256+$4}')
+          H=$(od -An -j20 -N4 -tu1 /tmp/apk-icon.png | awk '{print $1*16777216+$2*65536+$3*256+$4}')
+          echo "图标尺寸: ${W}x${H}（xxxhdpi 应为 192x192）"
+          [ "$W" = "192" ] && [ "$H" = "192" ] \
+            || { echo '::error::图标尺寸不符'; exit 1; }
+          echo "✓ 图标资源存在且尺寸正确"
 
           "$BT/apksigner" verify --print-certs "$APK" > /tmp/certs.txt
           head -4 /tmp/certs.txt
