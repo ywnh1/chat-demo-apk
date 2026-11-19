@@ -14,6 +14,11 @@ android/local.properties
 .DS_Store
 Thumbs.db
 
+# Signing material must never enter the repo. CI injects it from secrets.
+*.jks
+*.keystore
+android/keystore/
+
 # Local agent instructions and tooling state
 AGENTS.md
 .codewhale/

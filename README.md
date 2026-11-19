@@ -1,19 +1,26 @@
 # ChatDemo
 
+<p align="center">
+  <img src="docs/icon.png" alt="ChatDemo" width="160" height="160">
+</p>
+
 把 DeepSeek 官方的 **API 使用 demo** 打包成安卓 App，技术栈是 [Capacitor](https://capacitorjs.com/)。网页部分沿用官方构建产物，只加了原生桥接和关于页两个补丁文件。
 
 > **非官方项目。** 与 DeepSeek 及深度求索公司无隶属关系，不代表其立场。仓库里的网页资源来自 DeepSeek 发布的官方 demo，版权归 DeepSeek 所有。
 
 ## 这是什么
 
-官方 demo 是一份纯静态网页，用户自己填 API Key，由浏览器直接请求 `api.deepseek.com`。它没有后端，天然适合塞进 WebView —— 这里做的就是这些事：
+官方 demo 是一份纯静态网页，用户提供 API Key，浏览器直接请求 `api.deepseek.com`。它没有后端，但是也没有安卓的前端，所以：
 
 - 用 Capacitor 把静态资源装进安卓壳
 - 补上浏览器有、WebView 没有的几件事（返回键、外链、文件导出）
 - 在设置里加一个「关于」页，列出项目信息与全部依赖的开源许可
-- 用 GitHub Actions 自动出包并发 Release
 
-API Key 仍然只存在设备本地的 `localStorage` 里，不经过任何第三方服务器。
+API Key 只存在**设备本地**的 `localStorage`，不经过任何第三方服务器。
+
+## 快速开始
+
+下载安装：[Releases](../../releases/latest)
 
 ## 功能
 
@@ -35,14 +42,6 @@ API Key 仍然只存在设备本地的 `localStorage` 里，不经过任何第�
 - 输入框跟随软键盘调整，不会被遮住
 - 设置 → 关于：项目说明、版本、许可清单
 
-## 下载安装
-
-去 [Releases](../../releases/latest) 下载 `ChatDemo.apk`，一个包适配所有设备。
-
-应用里没有任何原生库（`lib/` 为空），所以不需要按 CPU 架构分包 —— 同一份字节码在 arm64、armv7、x86_64 上表现一致。若将来引入带 `.so` 的插件，CI 里的检查会直接报错提醒改用分包。
-
-安装时如果提示「应用未安装」，先卸载旧版本 —— 说明两次构建用了不同的签名密钥。
-
 ## 使用
 
 1. 打开 App，填入 DeepSeek API Key（在 [platform.deepseek.com](https://platform.deepseek.com/api_keys) 申请）
@@ -63,15 +62,6 @@ API Key 仍然只存在设备本地的 `localStorage` 里，不经过任何第�
 
 ## 构建
 
-### GitHub Actions（推荐）
-
-推送到 `main` 或提 PR 会跑测试、构建，并把 APK 传成 artifact。打 tag 会额外发布 Release：
-
-```bash
-git tag v0.1.2
-git push origin v0.1.2
-```
-
 ### 本地
 
 需要 JDK 21、Node 18+、Android SDK（platform 35 + build-tools 35.0.0）。
@@ -87,25 +77,6 @@ cd android && ./gradlew assembleRelease
 
 改了 `src/` 里的任何东西之后，必须重新 `npx cap sync android`，否则改的是旧副本。
 
-## 签名
-
-仓库里带了签名密钥 `android/keystore/release.jks`：
-
-- Key alias：`chat-demo`
-- Store / key password：`chat-demo`
-- 算法：RSA 2048，SHA384withRSA，有效期 30 年
-
-它的作用是让 CI 零配置也能产出可覆盖升级的 release APK。
-
-**这个密钥是公开的，任何人都能用同名包伪造签名。** 自用无所谓，要正经分发就换成自己的。
-
-在仓库 Settings → Secrets 里加上这四个，CI 会自动改用你的密钥：
-
-- `ANDROID_KEYSTORE_BASE64` — `base64 -w0 your-release.jks` 的输出
-- `ANDROID_KEYSTORE_PASSWORD`
-- `ANDROID_KEY_ALIAS`
-- `ANDROID_KEY_PASSWORD`
-
 ## 目录结构
 
 ```
@@ -115,7 +86,6 @@ src/about-panel.js        设置里的「关于」页
 test/                     jsdom 自检
 capacitor.config.json     Capacitor 配置
 android/                  Android 工程
-  keystore/release.jks    签名密钥（公开，仅作 CI 兜底）
 .github/workflows/        CI
 ```
 

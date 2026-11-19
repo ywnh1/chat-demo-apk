@@ -1,12 +1,16 @@
 apply plugin: 'com.android.application'
 
-// Release signing. CI passes the real values through env vars; when they are absent
-// the checked-in demo keystore is used so `assembleRelease` still produces an
-// installable, upgrade-compatible APK with zero configuration.
-def signingStoreFile = rootProject.file(System.getenv("ANDROID_KEYSTORE_PATH") ?: "keystore/release.jks")
-def signingStorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "chat-demo"
-def signingKeyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "chat-demo"
-def signingKeyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: "chat-demo"
+// Release signing. The real keystore is deliberately not in the repository:
+// CI supplies it through secrets (base64) and the file is written at build time.
+// When it is absent the release build falls back to the debug keystore, which
+// still yields an installable APK — just with a debug certificate.
+def envKeystore = System.getenv("ANDROID_KEYSTORE_PATH")
+def signingStoreFile = envKeystore ? rootProject.file(envKeystore) : null
+def hasReleaseKeystore = signingStoreFile != null && signingStoreFile.exists()
+
+def signingStorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+def signingKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
+def signingKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
 
 android {
     namespace "com.ywnh1.chatdemo"
@@ -25,18 +29,25 @@ android {
         }
     }
     signingConfigs {
-        release {
-            storeFile signingStoreFile
-            storePassword signingStorePassword
-            keyAlias signingKeyAlias
-            keyPassword signingKeyPassword
+        // Only declared when the keystore is actually present. Declaring it
+        // unconditionally with a null storeFile makes AGP fail at configure time.
+        if (hasReleaseKeystore) {
+            release {
+                storeFile signingStoreFile
+                storePassword signingStorePassword
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPassword
+            }
         }
     }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
+            // Fork PRs and local builds have no secrets. Falling back to the
+            // debug key keeps them buildable; CI refuses to publish a release
+            // that was signed this way.
+            signingConfig hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
         }
     }
 }

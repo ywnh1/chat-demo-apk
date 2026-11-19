@@ -51,10 +51,21 @@ jobs:
       - name: Decode release keystore
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          IS_RELEASE: ${{ startsWith(github.ref, 'refs/tags/v') }}
         run: |
           if [ -n "$KEYSTORE_B64" ]; then
+            mkdir -p android/keystore
             printf '%s' "$KEYSTORE_B64" | base64 -d > android/keystore/release.jks
             echo "ANDROID_KEYSTORE_PATH=keystore/release.jks" >> "$GITHUB_ENV"
+            echo "✓ 已载入 release keystore"
+          elif [ "$IS_RELEASE" = "true" ]; then
+            # A tag publishes an APK people will install and upgrade over. Signing
+            # it with the debug key would break upgrades later, so refuse here
+            # rather than ship something that has to be reinstalled.
+            echo '::error::发布 tag 需要 ANDROID_KEYSTORE_BASE64 密钥，否则只能产出 debug 签名的包'
+            exit 1
+          else
+            echo "::warning::无 release keystore，本次构建使用 debug 签名（仅用于验证编译）"
           fi
 
       - name: Build release APKs
@@ -138,8 +149,20 @@ jobs:
             || { echo "::error::APK 内的图标不是仓库里的图标 (RMSE=$NORM)"; exit 1; }
           echo "✓ 图标与仓库源文件一致"
 
-          "$BT/apksigner" verify --print-certs "$APK" | head -4
+          "$BT/apksigner" verify --print-certs "$APK" > /tmp/certs.txt
+          head -4 /tmp/certs.txt
           echo "✓ 签名有效"
+
+          # Prove which key signed it. The debug keystore also produces a valid
+          # signature, so validity alone says nothing about upgrade compatibility.
+          # Only asserted when a release keystore was supplied this run.
+          if [ -n "$ANDROID_KEYSTORE_PATH" ]; then
+            grep -q 'CN=chat-demo-apk' /tmp/certs.txt \
+              || { echo '::error::APK 不是用项目 release 密钥签名的'; exit 1; }
+            echo "✓ 由项目 release 密钥签名"
+          else
+            echo "::warning::本次使用 debug 签名，不检查证书主体"
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
