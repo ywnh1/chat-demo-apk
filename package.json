@@ -1,0 +1,21 @@
+{
+  "name": "chat-demo-app",
+  "version": "0.1.2",
+  "private": true,
+  "description": "Unofficial Android wrapper for the DeepSeek chat demo, built with Capacitor",
+  "license": "MIT",
+  "scripts": {
+    "sync": "cap sync android",
+    "build:apk": "npm run sync && cd android && ./gradlew assembleRelease",
+    "build:debug": "npm run sync && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.6.10",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/browser": "^7.0.5",
+    "@capacitor/cli": "^7.6.10",
+    "@capacitor/core": "^7.6.10",
+    "@capacitor/filesystem": "^7.1.9",
+    "@capacitor/share": "^7.0.4"
+  }
+}

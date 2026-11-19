@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#4D6BFE</color>
+    <color name="colorPrimaryDark">#3B54C4</color>
+    <color name="colorAccent">#4D6BFE</color>
+
+    <!-- Match the web app's light background so the bars do not look bolted on. -->
+    <color name="statusBarColor">#FFFFFF</color>
+    <color name="navigationBarColor">#FFFFFF</color>
+    <bool name="lightSystemBars">true</bool>
+</resources>

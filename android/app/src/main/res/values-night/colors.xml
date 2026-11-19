@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The web app's dark surface colour (dsw-static-neutral-bluish-950). -->
+    <color name="statusBarColor">#151517</color>
+    <color name="navigationBarColor">#151517</color>
+    <bool name="lightSystemBars">false</bool>
+</resources>
