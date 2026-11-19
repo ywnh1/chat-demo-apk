@@ -5,6 +5,7 @@
   "description": "Unofficial Android wrapper for the DeepSeek chat demo, built with Capacitor",
   "license": "MIT",
   "scripts": {
+    "test": "node test/about-panel.test.js",
     "sync": "cap sync android",
     "build:apk": "npm run sync && cd android && ./gradlew assembleRelease",
     "build:debug": "npm run sync && cd android && ./gradlew assembleDebug"
@@ -17,5 +18,8 @@
     "@capacitor/core": "^7.6.10",
     "@capacitor/filesystem": "^7.1.9",
     "@capacitor/share": "^7.0.4"
+  },
+  "devDependencies": {
+    "jsdom": "^31.0.1"
   }
 }

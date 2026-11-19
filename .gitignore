@@ -14,8 +14,6 @@ android/local.properties
 .DS_Store
 Thumbs.db
 
-# Local signing material that must never be committed
-android/keystore/release.jks
-
-# Tooling state
+# Local agent instructions and tooling state
+AGENTS.md
 .codewhale/

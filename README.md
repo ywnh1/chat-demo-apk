@@ -1,8 +1,8 @@
-# chat-demo-app
+# ChatDemo
 
-把 DeepSeek 官方的 **API 使用 demo** 打包成安卓 App，技术栈是 [Capacitor](https://capacitorjs.com/)。网页部分完全沿用官方构建产物，只加了一个原生桥接补丁。
+把 DeepSeek 官方的 **API 使用 demo** 打包成安卓 App，技术栈是 [Capacitor](https://capacitorjs.com/)。网页部分沿用官方构建产物，只加了原生桥接和关于页两个补丁文件。
 
-> **非官方项目。** 与 DeepSeek 无隶属关系，不代表官方立场。仓库里的网页资源来自 DeepSeek 发布的官方 demo，版权归 DeepSeek 所有。
+> **非官方项目。** 与 DeepSeek 及深度求索公司无隶属关系，不代表其立场。仓库里的网页资源来自 DeepSeek 发布的官方 demo，版权归 DeepSeek 所有。
 
 ## 这是什么
 
@@ -10,6 +10,7 @@
 
 - 用 Capacitor 把静态资源装进安卓壳
 - 补上浏览器有、WebView 没有的几件事（返回键、外链、文件导出）
+- 在设置里加一个「关于」页，列出项目信息与全部依赖的开源许可
 - 用 GitHub Actions 自动出包并发 Release
 
 API Key 仍然只存在设备本地的 `localStorage` 里，不经过任何第三方服务器。
@@ -32,6 +33,7 @@ API Key 仍然只存在设备本地的 `localStorage` 里，不经过任何第�
 - 外部链接（引用角标、API 文档）用系统浏览器打开，不会把 App 顶掉
 - 导出 zip 时调起系统分享面板，可存到「文件」或发给其他 App
 - 输入框跟随软键盘调整，不会被遮住
+- 设置 → 关于：项目说明、版本、许可清单
 
 ## 下载安装
 
@@ -52,22 +54,21 @@ API Key 仍然只存在设备本地的 `localStorage` 里，不经过任何第�
 
 ## 与官方 demo 的差异
 
-官方产物 `src/static/`、`src/LICENSE` 一字未改。改动只有四处：
+改动集中在三处，`src/static/` 下的 JS/CSS/字体除下方注明的那一个字符串外未作修改：
 
-| 位置 | 改了什么 | 为什么 |
-| --- | --- | --- |
-| `src/index.html` | 尾部加了一行 `<script src="native-bridge.js">` | 挂载补丁 |
-| `src/native-bridge.js` | 新增文件 | 补 WebView 缺口，浏览器里自动失效 |
-| `android/` | Capacitor 生成的工程 + 权限、签名、ABI 配置 | 打包所需 |
-| `capacitor.config.json` | appId / appName / webDir | 打包所需 |
+- `src/index.html` — 标题改为 `ChatDemo`，引用两个补丁脚本
+- `src/static/js/main.*.js` — 仅替换 i18n 字典里的应用名（`appName`），由 `API 使用 demo` / `API usage demo` 改为 `ChatDemo`。侧边栏显示的就是这个字段
+- `src/native-bridge.js` — 新增，补 WebView 缺口
+- `src/about-panel.js` — 新增，注入「关于」标签页
+- `android/`、`capacitor.config.json` — 打包配置
 
-`native-bridge.js` 只在 `Capacitor.isNativePlatform()` 为真时生效，纯浏览器打开时什么都不做。
+两个补丁脚本都不改写上游 DOM 结构：`native-bridge.js` 在纯浏览器里自动失效，`about-panel.js` 只在识别到官方设置弹窗时才注入。
 
 ## 构建
 
 ### GitHub Actions（推荐）
 
-推送到 `main` 或提 PR 会构建并把 APK 传成 artifact。打 tag 会额外发布 Release：
+推送到 `main` 或提 PR 会跑测试、构建，并把 APK 传成 artifact。打 tag 会额外发布 Release：
 
 ```bash
 git tag v0.1.2
@@ -80,17 +81,24 @@ git push origin v0.1.2
 
 ```bash
 npm ci
+npm test              # 关于页的 DOM 自检
 npx cap sync android
 cd android && ./gradlew assembleRelease
 ```
 
-产物在 `android/app/build/outputs/apk/release/`。
+产物在 `android/app/build/outputs/apk/{arm64,universal}/release/`。
 
 改了 `src/` 里的任何东西之后，必须重新 `npx cap sync android`，否则改的是旧副本。
 
 ## 签名
 
-仓库里带了一个公开的演示密钥 `android/keystore/demo-release.jks`（口令全是 `chatdemo`）。它的作用是让 CI 零配置也能产出可覆盖升级的 release APK。
+仓库里带了签名密钥 `android/keystore/release.jks`：
+
+- Key alias：`chat-demo`
+- Store / key password：`chat-demo`
+- 算法：RSA 2048，SHA384withRSA，有效期 30 年
+
+它的作用是让 CI 零配置也能产出可覆盖升级的 release APK。
 
 **这个密钥是公开的，任何人都能用同名包伪造签名。** 自用无所谓，要正经分发就换成自己的。
 
@@ -104,13 +112,24 @@ cd android && ./gradlew assembleRelease
 ## 目录结构
 
 ```
-src/                      官方网页产物（未改动，除 index.html 加一行）
-src/native-bridge.js      原生桥接补丁
+src/                      官方网页产物 + 两个补丁脚本
+src/native-bridge.js      返回键、外链、导出
+src/about-panel.js        设置里的「关于」页
+test/                     jsdom 自检
 capacitor.config.json     Capacitor 配置
 android/                  Android 工程
-  keystore/               签名密钥
+  keystore/release.jks    签名密钥（公开，仅作 CI 兜底）
 .github/workflows/        CI
 ```
+
+## 关于页包含什么
+
+设置 → 关于，列出：
+
+- 项目维护者、应用版本（读自 `application-version`）、上游 Demo 版本、仓库地址
+- 本项目、上游 Demo、Capacitor 各包、网页运行时（React / zustand / KaTeX / Prism / Mermaid / DOMPurify）的许可
+
+内容在 `src/about-panel.js` 顶部的 `LICENCE_GROUPS` 里，加依赖时顺手加一行即可。
 
 ## 一些说明
 
@@ -120,8 +139,10 @@ android/                  Android 工程
 
 **对话历史存在 IndexedDB 里。** 清除应用数据会一起清掉。重要对话先用「导出」存一份。
 
+**上游的 system prompt 未改。** bundle 里有一条发给模型的系统提示「该助手为 DeepSeek，由深度求索公司创造」。那是模型身份设定，改动会让模型谎称自己是别的产品，所以保留原样。
+
 ## 许可
 
 MIT。见 [LICENSE](LICENSE)。
 
-`src/` 下的网页资源版权归 DeepSeek，同样以 MIT 协议发布。
+`src/` 下的网页资源版权归 DeepSeek，同样以 MIT 协议发布。完整依赖许可见应用内「关于」页。

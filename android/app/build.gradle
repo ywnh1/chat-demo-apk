@@ -3,10 +3,10 @@ apply plugin: 'com.android.application'
 // Release signing. CI passes the real values through env vars; when they are absent
 // the checked-in demo keystore is used so `assembleRelease` still produces an
 // installable, upgrade-compatible APK with zero configuration.
-def signingStoreFile = rootProject.file(System.getenv("ANDROID_KEYSTORE_PATH") ?: "keystore/demo-release.jks")
-def signingStorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "chatdemo"
-def signingKeyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "chatdemo"
-def signingKeyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: "chatdemo"
+def signingStoreFile = rootProject.file(System.getenv("ANDROID_KEYSTORE_PATH") ?: "keystore/release.jks")
+def signingStorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "chat-demo"
+def signingKeyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "chat-demo"
+def signingKeyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: "chat-demo"
 
 android {
     namespace "com.ywnh1.chatdemo"
