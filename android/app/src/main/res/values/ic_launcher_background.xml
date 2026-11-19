@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Brand blue sampled from the launcher artwork. Only shows through if a
+         launcher mask exposes the canvas corners; the foreground art covers
+         the rest, so a solid fill is enough. -->
+    <color name="ic_launcher_background">#2C68FC</color>
 </resources>

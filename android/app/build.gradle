@@ -39,19 +39,6 @@ android {
             signingConfig signingConfigs.release
         }
     }
-    // Two output flavors instead of ABI splits: splits emit nothing when the APK
-    // carries no native libraries, and this project currently has none. Explicit
-    // flavors always produce both files.
-    flavorDimensions "abi"
-    productFlavors {
-        universal {
-            dimension "abi"
-        }
-        arm64 {
-            dimension "abi"
-            ndk { abiFilters 'arm64-v8a' }
-        }
-    }
 }
 
 repositories {

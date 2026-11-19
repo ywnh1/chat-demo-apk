@@ -37,12 +37,9 @@ API Key 仍然只存在设备本地的 `localStorage` 里，不经过任何第�
 
 ## 下载安装
 
-去 [Releases](../../releases/latest) 下载：
+去 [Releases](../../releases/latest) 下载 `ChatDemo.apk`，一个包适配所有设备。
 
-- `chat-demo-<版本>-universal.apk` — 通用包，任何设备都能装
-- `chat-demo-<版本>-arm64-v8a.apk` — 只含 arm64，现代手机装这个
-
-两个包目前体积接近，因为网页产物里没有原生库。等以后引入带 `.so` 的插件，单架构包才会明显更小。
+应用里没有任何原生库（`lib/` 为空），所以不需要按 CPU 架构分包 —— 同一份字节码在 arm64、armv7、x86_64 上表现一致。若将来引入带 `.so` 的插件，CI 里的检查会直接报错提醒改用分包。
 
 安装时如果提示「应用未安装」，先卸载旧版本 —— 说明两次构建用了不同的签名密钥。
 
@@ -86,7 +83,7 @@ npx cap sync android
 cd android && ./gradlew assembleRelease
 ```
 
-产物在 `android/app/build/outputs/apk/{arm64,universal}/release/`。
+产物是 `android/app/build/outputs/apk/release/app-release.apk`，CI 会把它重命名为 `ChatDemo.apk`。
 
 改了 `src/` 里的任何东西之后，必须重新 `npx cap sync android`，否则改的是旧副本。
 
