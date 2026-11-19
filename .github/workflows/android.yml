@@ -79,6 +79,33 @@ jobs:
           cp "$OUT/universal/release/app-universal-release.apk" "dist/chat-demo-$VERSION-universal.apk"
           ls -lh dist
 
+      # Fail the build unless the APK is what we claim it is. A green Gradle run
+      # only proves it compiled; these checks prove what actually shipped.
+      - name: Verify APKs
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          echo "使用 build-tools: $BT"
+          APK=dist/chat-demo-$VERSION-universal.apk
+
+          "$BT/aapt2" dump badging "$APK" > /tmp/badging.txt
+          cat /tmp/badging.txt | head -12
+
+          grep -q "package: name='com.ywnh1.chatdemo'" /tmp/badging.txt || { echo '::error::包名不符'; exit 1; }
+          grep -q "versionName='$VERSION'" /tmp/badging.txt || { echo '::error::版本号不符'; exit 1; }
+          grep -q "application-label:'ChatDemo'" /tmp/badging.txt || { echo '::error::应用名不符'; exit 1; }
+          grep -q "android.permission.RECORD_AUDIO" /tmp/badging.txt || { echo '::error::缺少录音权限'; exit 1; }
+          echo "✓ 包名 / 版本 / 应用名 / 录音权限"
+
+          # The web assets must contain both patches, otherwise the shell loaded
+          # a stale copy and the About tab would silently be missing.
+          unzip -p "$APK" assets/public/index.html | grep -q 'about-panel.js' || { echo '::error::APK 内缺少 about-panel.js'; exit 1; }
+          unzip -p "$APK" assets/public/index.html | grep -q 'native-bridge.js' || { echo '::error::APK 内缺少 native-bridge.js'; exit 1; }
+          unzip -l "$APK" | grep -q 'assets/public/about-panel.js' || { echo '::error::补丁文件未打包'; exit 1; }
+          echo "✓ 两个补丁脚本均已打包"
+
+          "$BT/apksigner" verify --print-certs "$APK" | head -4
+          echo "✓ 签名有效"
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
